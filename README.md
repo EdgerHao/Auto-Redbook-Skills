@@ -36,6 +36,92 @@
 
 ## 🚀 使用方式总览
 
+## 🤖 在 OpenClaw 中使用 Agent 集群（重点）
+
+这一节是“怎么在 OpenClaw 里真正跑起来”的实操流程。
+
+### A. 准备环境（WSL）
+
+```bash
+wsl -d Ubuntu-24.04 -e bash -lc "gh auth login"
+```
+
+需要确保：
+- `python3`
+- `tmux`
+- `gh`（已登录）
+
+### B. 进入项目目录
+
+```bash
+wsl -d Ubuntu-24.04 -e bash -lc "cd /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills && pwd"
+```
+
+### C. 创建一个 Agent 任务（自动建 worktree + 分支）
+
+```bash
+wsl -d Ubuntu-24.04 -e bash -lc "cd /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills && \
+python3 scripts/agent_cluster.py add \
+  --id redbook-self-002 \
+  --description 'self task for render optimization' \
+  --tmux-session redbook-002 \
+  --base origin/feat/cluster-bootstrap \
+  --worktree-root /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills/worktrees"
+```
+
+### D. 启动 Agent 会话（示例）
+
+```bash
+wsl -d Ubuntu-24.04 -e bash -lc "tmux new-session -d -s redbook-002 \
+  -c /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills/worktrees/redbook-self-002 \
+  'sleep 1200'"
+```
+
+> 说明：这里用 `sleep` 只是演示。实战请替换成 codex/claude 的真实启动命令。
+
+### E. 监控任务状态
+
+```bash
+wsl -d Ubuntu-24.04 -e bash -lc "cd /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills && \
+python3 scripts/agent_cluster.py monitor --json"
+```
+
+### F. 自动重启异常任务
+
+```bash
+wsl -d Ubuntu-24.04 -e bash -lc "cd /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills && \
+python3 scripts/cluster_autorestart.py"
+```
+
+### G. 创建 PR 并做 Gate 验收
+
+```bash
+# 创建 PR（示例）
+wsl -d Ubuntu-24.04 -e bash -lc "cd /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills/worktrees/redbook-self-002 && \
+gh pr create --repo EdgerHao/Auto-Redbook-Skills --base main --head EdgerHao:feat/redbook-self-002 \
+  --title 'feat: redbook-self-002' --body 'Created by agent-cluster task.'"
+
+# Gate 检查（fork 场景必须带 --repo）
+wsl -d Ubuntu-24.04 -e bash -lc "cd /mnt/c/Users/18024/.openclaw/workspace/Auto-Redbook-Skills && \
+python3 scripts/pr_gate.py 1 --repo EdgerHao/Auto-Redbook-Skills"
+```
+
+### H. 你在 OpenClaw 对话里可以直接这样说
+
+- “创建一个 redbook-self-003 任务并启动会话”
+- “帮我巡检当前所有集群任务”
+- “把 needs-restart 的任务自动拉起并汇报”
+- “对 PR #X 跑 gate，并告诉我为什么 BLOCK/PASS”
+
+### I. OpenClaw Quick Prompts (EN)
+
+- "Create task redbook-self-003 and start a tmux session"
+- "Monitor all cluster tasks and report anomalies"
+- "Auto-restart all tasks in needs-restart and report what changed"
+- "Run PR gate for PR #X and explain BLOCK/PASS reasons"
+
+---
+
 ### 1. 克隆项目
 
 ```bash
