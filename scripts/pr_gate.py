@@ -17,8 +17,12 @@ def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, text=True, capture_output=True, check=False)
 
 
-def gh_json(args: list[str]) -> Any | None:
-    res = run(["gh", *args])
+def gh_json(args: list[str], repo: str | None = None) -> Any | None:
+    cmd = ["gh"]
+    if repo:
+        cmd.extend(["-R", repo])
+    cmd.extend(args)
+    res = run(cmd)
     if res.returncode != 0:
         return None
     try:
@@ -30,9 +34,10 @@ def gh_json(args: list[str]) -> Any | None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Check PR merge gate")
     parser.add_argument("pr", help="PR number or URL")
+    parser.add_argument("--repo", help="owner/repo, e.g. EdgerHao/Auto-Redbook-Skills")
     args = parser.parse_args()
 
-    data = gh_json(["pr", "view", args.pr, "--json", "url,state,isDraft,reviewDecision,statusCheckRollup,title"])
+    data = gh_json(["pr", "view", args.pr, "--json", "url,state,isDraft,reviewDecision,statusCheckRollup,title"], repo=args.repo)
     if not data:
         print(json.dumps({"result": "BLOCK", "reasons": ["gh pr view failed"]}, ensure_ascii=False))
         raise SystemExit(1)
